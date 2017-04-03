@@ -13,10 +13,11 @@ emailValidationRegEx = re.compile(r"""[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#
 image_list = "tif tiff gif jpeg jpg jif jfif jp2 jpx j2k j2c fpx pcd png pdf".split()
 
 class Crawler:
-    donePages = []
-    toDoPages = []
+
 
     def __init__(self, root):
+        self.donePages = []
+        self.toDoPages = []
         self.root = root[0]
         self.file = open(base64.urlsafe_b64encode(self.root), 'w')
         rootDomain = [urlparse.urljoin(self.root, '/').strip()]
@@ -28,7 +29,7 @@ class Crawler:
 
 
         self.toDoPages.append(self.root)
-        self.crawler(10000)
+        self.crawler(1000)
 
     def crawler(self,  maxPages):
         page = 1
@@ -37,35 +38,37 @@ class Crawler:
             if not url in self.donePages:
                 self.donePages.append(url)
 
+                try:
+                    j = url.split('.')[-1]
+                    if j.lower() not in ['pdf', 'bmp',  'jpeg'] + image_list:
+                        # print "Running Crawler on :", url
 
-                j = url.split('.')[-1]
-                if j.lower() not in ['pdf', 'bmp',  'jpeg'] + image_list:
-                    # print "Running Crawler on :", url
-                    source = requests.get(url).text
-                    soup = BeautifulSoup(source, "html.parser")
+                        source = requests.get(url).text
+                        soup = BeautifulSoup(source, "html.parser")
 
-                    l = soup.text.encode('ascii','ignore')
-                    # self.file.write(l)
-
-
-
-                    self.getAllLinks(soup)
-
-                    # the actual searching of emails
-                    gg = l
-                    op = emailValidationRegEx.findall(l)
-                    # print op
-                    for i in op:
-                        if i not in self.emails:
-                            self.emails.add(i)
-                            self.output.write(i)
-                            self.output.write('\n')
-                            print i
-                            self.output.flush()
+                        l = soup.text.encode('ascii','ignore')
+                        # self.file.write(l)
 
 
 
-                    page += 1
+                        self.getAllLinks(soup)
+
+                        # the actual searching of emails
+                        gg = l
+                        op = emailValidationRegEx.findall(l)
+                        # print op
+                        for i in op:
+                            if i not in self.emails:
+                                self.emails.add(i)
+                                self.output.write(i)
+                                self.output.write('\n')
+                                print i
+                                self.output.flush()
+
+                except:
+                    pass
+
+                page += 1
 
     def getAllLinks(self, pageSoup):
         links = [g['href'] for g in pageSoup.findAll("a", {'href': True})]
@@ -117,9 +120,7 @@ class Crawler:
 
 
 
-listOfSites = [k.strip() for k in """http://www.vit.edu.in/faculty/rajashree-soman
-http://www.vit.edu.in
-http://www.acpce.org
+listOfSites = [k.strip() for k in """http://www.acpce.org
 http://www.pvppcoe.ac.in 
 http://www.shahandanchor.com
 https://www.tcetmumbai.in
@@ -128,6 +129,7 @@ http://www.spce.ac.in
 http://www.spit.ac.in
 http://www.bvcoenm.org.in
 http://www.dmce.edu
+http://www.vit.edu.in
 http://www.dbit.in
 http://www.umit.ac.in
 http://www.acpce.org 
@@ -141,7 +143,7 @@ http://www.terna.org/2
  http://www.tsec.edu
  http://www.vit.edu.in
  https://ves.ac.in/vesit
-""".split('\n') if k][:2]
+""".split('\n') if k]
 
 responseArray = []
 retryArray = []
@@ -161,6 +163,6 @@ print "NUMBER OF SITES LEFT?? " + str(len(listOfSites) - (len(responseArray) + l
 print "WHAT SITES ARE LEFT"
 pprint(retryArray)
 
-for site in responseArray[:1]:
+for site in responseArray:
     Crawler(site)
 
